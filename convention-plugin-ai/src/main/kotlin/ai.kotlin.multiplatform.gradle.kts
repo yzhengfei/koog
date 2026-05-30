@@ -3,6 +3,7 @@
 import ai.koog.gradle.publish.maven.configureJvmJarManifest
 import ai.koog.gradle.tests.configureTests
 import ai.koog.gradle.xcframework.XCFrameworkConfig.configureXCFrameworkIfRequested
+import com.android.build.api.dsl.LibraryExtension
 import jetbrains.sign.GpgSignSignatoryProvider
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.abi.ExperimentalAbiValidation
@@ -12,14 +13,26 @@ plugins {
     `maven-publish`
     id("ai.kotlin.configuration")
     id("ai.kotlin.dokka")
-    id("com.android.library")
     id("signing")
 }
+
+// Per-target opt-out flags. Set `koog.target.<name>=false` in gradle.properties
+// to skip a target entirely. Subprojects that reference the corresponding source sets
+// (e.g. `androidMain { … }`) must guard those blocks with the same property check.
+val isAndroidEnabled = (findProperty("koog.target.android") as? String)?.toBoolean() ?: true
+val isJsEnabled = (findProperty("koog.target.js") as? String)?.toBoolean() ?: true
+val isIosEnabled = (findProperty("koog.target.ios") as? String)?.toBoolean() ?: true
 
 // Per-module opt-out for the wasmJs target. Modules that depend on libraries with no wasmJs publication,
 // for example, the "OTel Kotlin SDK 0.3.0" set `koog.target.wasmJs=false` in their gradle.properties.
 // The target is not registered at all, and no wasm-js publication is produced.
 val isWasmJsIncluded = (findProperty("koog.target.wasmJs") as? String)?.toBoolean() ?: true
+
+// The Android Gradle Plugin must be applied before the kotlin {} block.
+if (isAndroidEnabled) {
+    apply(plugin = "com.android.library")
+}
+
 kotlin {
     @OptIn(ExperimentalAbiValidation::class)
     abiValidation {
@@ -39,24 +52,28 @@ kotlin {
     }
 
     // Tiers are in accordance with <https://kotlinlang.org/docs/native-target-support.html>
-    // Tier 1
-    iosSimulatorArm64()
-    iosArm64()
+    if (isIosEnabled) {
+        // Tier 1
+        iosSimulatorArm64()
+        iosArm64()
 
-    // Tier 2
+        // Tier 2
 
-    // Tier 3
-    iosX64()
+        // Tier 3
+        iosX64()
 
-    // Configure XCFramework for iOS targets (opt-in via -Pkoog.build.xcframework=true)
-    configureXCFrameworkIfRequested(project)
+        // Configure XCFramework for iOS targets (opt-in via -Pkoog.build.xcframework=true)
+        configureXCFrameworkIfRequested(project)
+    }
 
-    // Android
-    androidTarget {
-        // Without this, no Android variants are published to Maven, so androidMain
-        // sources would be missing from the published artifacts
-        // and only commonMain (e.g. Stub) would be accessible to Android consumers.
-        publishLibraryVariants("release")
+    if (isAndroidEnabled) {
+        // Android
+        androidTarget {
+            // Without this, no Android variants are published to Maven, so androidMain
+            // sources would be missing from the published artifacts
+            // and only commonMain (e.g. Stub) would be accessible to Android consumers.
+            publishLibraryVariants("release")
+        }
     }
 
     // jvm & js
@@ -64,12 +81,14 @@ kotlin {
         configureTests()
     }
 
-    js(IR) {
-        browser {
-            binaries.library()
-        }
+    if (isJsEnabled) {
+        js(IR) {
+            browser {
+                binaries.library()
+            }
 
-        configureTests()
+            configureTests()
+        }
     }
 
     if (isWasmJsIncluded) {
@@ -105,20 +124,24 @@ kotlin {
             dependsOn(commonTest.get())
         }
 
-        appleMain {
-            dependsOn(nonJvmCommonMain)
+        if (isIosEnabled) {
+            appleMain {
+                dependsOn(nonJvmCommonMain)
+            }
+
+            appleTest {
+                dependsOn(nonJvmCommonTest)
+            }
         }
 
-        appleTest {
-            dependsOn(nonJvmCommonTest)
-        }
+        if (isJsEnabled) {
+            jsMain {
+                dependsOn(nonJvmCommonMain)
+            }
 
-        jsMain {
-            dependsOn(nonJvmCommonMain)
-        }
-
-        jsTest {
-            dependsOn(nonJvmCommonTest)
+            jsTest {
+                dependsOn(nonJvmCommonTest)
+            }
         }
 
         if (isWasmJsIncluded) {
@@ -139,35 +162,39 @@ kotlin {
             dependsOn(jvmCommonTest)
         }
 
-        androidMain {
-            dependsOn(jvmCommonMain)
-        }
+        if (isAndroidEnabled) {
+            androidMain {
+                dependsOn(jvmCommonMain)
+            }
 
-        androidUnitTest {
-            dependsOn(jvmCommonTest)
+            androidUnitTest {
+                dependsOn(jvmCommonTest)
 
-            dependencies {
-                implementation(kotlin("test-junit"))
+                dependencies {
+                    implementation(kotlin("test-junit"))
+                }
             }
         }
     }
 
 }
 
-android {
-    compileSdk = 36
-    namespace = "${project.group.toString().replace('-', '.')}.${project.name.replace('-', '.')}"
+if (isAndroidEnabled) {
+    extensions.configure<LibraryExtension> {
+        compileSdk = 36
+        namespace = "${project.group.toString().replace('-', '.')}.${project.name.replace('-', '.')}"
 
-    // Without an explicit minSdk, AGP falls back to its default (`1`), which propagates
-    // into the published AAR's merged manifest and forces every consumer to override it.
-    // It also breaks transitive deps that require a higher minSdk.
-    defaultConfig {
-        minSdk = 23
-    }
+        // Without an explicit minSdk, AGP falls back to its default (`1`), which propagates
+        // into the published AAR's merged manifest and forces every consumer to override it.
+        // It also breaks transitive deps that require a higher minSdk (e.g. LiteRT requires 24+).
+        defaultConfig {
+            minSdk = 35
+        }
 
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        compileOptions {
+            sourceCompatibility = JavaVersion.VERSION_17
+            targetCompatibility = JavaVersion.VERSION_17
+        }
     }
 }
 

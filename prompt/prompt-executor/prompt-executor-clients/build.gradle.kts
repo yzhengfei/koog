@@ -4,6 +4,8 @@ plugins {
     id("ai.kotlin.multiplatform")
 }
 
+val isAndroidEnabled = (findProperty("koog.target.android") as? String)?.toBoolean() ?: true
+
 kotlin {
     sourceSets {
         commonMain {
@@ -15,9 +17,11 @@ kotlin {
                 implementation(libs.oshai.kotlin.logging)
             }
         }
-        androidMain {
-            dependencies {
-                runtimeOnly(libs.slf4j.simple)
+        if (isAndroidEnabled) {
+            androidMain {
+                dependencies {
+                    runtimeOnly(libs.slf4j.simple)
+                }
             }
         }
         jvmMain {

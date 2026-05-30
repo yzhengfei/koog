@@ -7,6 +7,10 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
+val isAndroidEnabled = (findProperty("koog.target.android") as? String)?.toBoolean() ?: true
+val isJsEnabled = (findProperty("koog.target.js") as? String)?.toBoolean() ?: true
+val isIosEnabled = (findProperty("koog.target.ios") as? String)?.toBoolean() ?: true
+
 kotlin {
     sourceSets {
         commonMain {
@@ -35,16 +39,20 @@ kotlin {
             }
         }
 
-        androidUnitTest {
-            dependencies {
-                implementation(libs.ktor.client.cio)
+        if (isAndroidEnabled) {
+            androidUnitTest {
+                dependencies {
+                    implementation(libs.ktor.client.cio)
+                }
             }
         }
 
-        jsTest {
-            dependencies {
-                implementation(kotlin("test-js"))
-                implementation(libs.ktor.client.js)
+        if (isJsEnabled) {
+            jsTest {
+                dependencies {
+                    implementation(kotlin("test-js"))
+                    implementation(libs.ktor.client.js)
+                }
             }
         }
 
@@ -56,9 +64,11 @@ kotlin {
             }
         }
 
-        appleTest {
-            dependencies {
-                implementation(libs.ktor.client.darwin)
+        if (isIosEnabled) {
+            appleTest {
+                dependencies {
+                    implementation(libs.ktor.client.darwin)
+                }
             }
         }
     }
