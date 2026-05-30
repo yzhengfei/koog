@@ -61,10 +61,10 @@ internal class DashscopeChatCompletionRequest(
  */
 @Serializable
 public class DashscopeChatCompletionResponse(
-    public val choices: List<OpenAIChoice>,
-    override val created: Long,
-    override val id: String,
-    override val model: String,
+    public val choices: List<OpenAIChoice> = emptyList(),
+    override val created: Long? = null,
+    override val id: String? = null,
+    override val model: String? = null,
     public val systemFingerprint: String? = null,
     @SerialName("object")
     public val objectType: String = "chat.completion",
@@ -76,10 +76,10 @@ public class DashscopeChatCompletionResponse(
  */
 @Serializable
 public class DashscopeChatCompletionStreamResponse(
-    public val choices: List<OpenAIStreamChoice>,
-    override val created: Long,
-    override val id: String,
-    override val model: String,
+    public val choices: List<OpenAIStreamChoice> = emptyList(),
+    override val created: Long? = null,
+    override val id: String? = null,
+    override val model: String? = null,
     public val systemFingerprint: String? = null,
     @SerialName("object")
     public val objectType: String = "chat.completion.chunk",

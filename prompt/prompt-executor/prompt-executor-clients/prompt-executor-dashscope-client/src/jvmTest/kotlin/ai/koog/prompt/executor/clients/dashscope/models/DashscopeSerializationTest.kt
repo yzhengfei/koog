@@ -471,7 +471,7 @@ class DashscopeSerializationTest {
 
             response.id shouldBe "chatcmpl-tool-1"
             response.choices.size shouldBe 1
-            val toolCalls = response.choices[0].delta.toolCalls
+            val toolCalls = response.choices[0].delta?.toolCalls
             kotlin.test.assertNotNull(toolCalls)
             toolCalls.size shouldBe 1
             toolCalls[0].index shouldBe 0

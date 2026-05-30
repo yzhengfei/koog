@@ -144,9 +144,9 @@ public class DashscopeLLMClient @JvmOverloads constructor(
 
         response.collect { chunk ->
             chunk.choices.firstOrNull()?.let { choice ->
-                choice.delta.content?.let { emitTextDelta(it) }
+                choice.delta?.content?.let { emitTextDelta(it) }
 
-                choice.delta.toolCalls?.forEach { toolCall ->
+                choice.delta?.toolCalls?.forEach { toolCall ->
                     val id = toolCall.id?.takeIf { it.isNotEmpty() }
                     val name = toolCall.function?.name
                     val arguments = toolCall.function?.arguments

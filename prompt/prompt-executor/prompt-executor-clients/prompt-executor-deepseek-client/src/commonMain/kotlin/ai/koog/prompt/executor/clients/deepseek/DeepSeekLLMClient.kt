@@ -46,6 +46,48 @@ public class DeepSeekClientSettings(
     timeoutConfig: ConnectionTimeoutConfig = ConnectionTimeoutConfig()
 ) : OpenAIBaseSettings(baseUrl, chatCompletionsPath, timeoutConfig)
 
+public fun prepareMessagesForDeepSeek(
+    messages: List<OpenAIMessage>,
+    addJsonResponseHint: Boolean = false
+): List<OpenAIMessage> {
+    val preparedMessages = mutableListOf<OpenAIMessage>()
+
+    for (message in messages) {
+        val previousMessage = preparedMessages.lastOrNull() as? OpenAIMessage.Assistant
+
+        if (
+            previousMessage?.reasoningContent != null &&
+            message is OpenAIMessage.Assistant &&
+            message.reasoningContent == null &&
+            !message.toolCalls.isNullOrEmpty()
+        ) {
+            preparedMessages.removeLast()
+
+            val content = previousMessage.content ?: message.content
+
+            // KOOG_BUG: koog 的 bug，它会把 reasoningContent 设置到 content 里，
+            // 这里发现一样清空，减少 Token
+            preparedMessages += OpenAIMessage.Assistant(
+                content = if (content?.text() == previousMessage.reasoningContent) null else content,
+                reasoningContent = previousMessage.reasoningContent,
+                audio = message.audio ?: previousMessage.audio,
+                name = message.name ?: previousMessage.name,
+                refusal = message.refusal ?: previousMessage.refusal,
+                toolCalls = message.toolCalls,
+                annotations = message.annotations ?: previousMessage.annotations
+            )
+        } else {
+            preparedMessages += message
+        }
+    }
+
+    if (addJsonResponseHint) {
+        // DeepSeek requires an explicit JSON mention for structured output mode.
+        preparedMessages += OpenAIMessage.Assistant(Content.Text("Respond with JSON"))
+    }
+
+    return preparedMessages
+}
 /**
  * Implementation of [LLMClient] for DeepSeek API.
  *
@@ -55,7 +97,7 @@ public class DeepSeekClientSettings(
  *   that accepts an API key and a [KoogHttpClient.Factory] to create a client with standard defaults.
  * @param clock Clock instance used for tracking response metadata timestamps.
  */
-public class DeepSeekLLMClient @JvmOverloads constructor(
+public open class DeepSeekLLMClient @JvmOverloads constructor(
     private val settings: DeepSeekClientSettings = DeepSeekClientSettings(),
     httpClient: KoogHttpClient,
     clock: KoogClock = KoogClock.System,
@@ -133,44 +175,6 @@ public class DeepSeekLLMClient @JvmOverloads constructor(
         return json.encodeToString(DeepSeekChatCompletionRequestSerializer, request)
     }
 
-    private fun prepareMessagesForDeepSeek(
-        messages: List<OpenAIMessage>,
-        addJsonResponseHint: Boolean = false
-    ): List<OpenAIMessage> {
-        val preparedMessages = mutableListOf<OpenAIMessage>()
-
-        for (message in messages) {
-            val previousMessage = preparedMessages.lastOrNull() as? OpenAIMessage.Assistant
-
-            if (
-                previousMessage?.reasoningContent != null &&
-                message is OpenAIMessage.Assistant &&
-                message.reasoningContent == null &&
-                !message.toolCalls.isNullOrEmpty()
-            ) {
-                preparedMessages.removeLast()
-                preparedMessages += OpenAIMessage.Assistant(
-                    content = previousMessage.content ?: message.content,
-                    reasoningContent = previousMessage.reasoningContent,
-                    audio = message.audio ?: previousMessage.audio,
-                    name = message.name ?: previousMessage.name,
-                    refusal = message.refusal ?: previousMessage.refusal,
-                    toolCalls = message.toolCalls,
-                    annotations = message.annotations ?: previousMessage.annotations
-                )
-            } else {
-                preparedMessages += message
-            }
-        }
-
-        if (addJsonResponseHint) {
-            // DeepSeek requires an explicit JSON mention for structured output mode.
-            preparedMessages += OpenAIMessage.Assistant(Content.Text("Respond with JSON"))
-        }
-
-        return preparedMessages
-    }
-
     override fun processProviderChatResponse(response: DeepSeekChatCompletionResponse): List<Message.Assistant> {
         require(response.choices.isNotEmpty()) { "Empty choices in response" }
         return response.choices.map {
@@ -195,11 +199,20 @@ public class DeepSeekLLMClient @JvmOverloads constructor(
 
         response.collect { chunk ->
             chunk.choices.firstOrNull()?.let { choice ->
-                choice.delta.content?.let { emitTextDelta(it) }
+                // KOOG_BUG: FIM 代码补全用 text 字段，koog 的 OpenAIStreamChoice 无此字段
+                choice.text?.let { emitTextDelta(text = it, index = choice.index) }
 
-                choice.delta.toolCalls?.forEach { toolCall ->
-                    val id = toolCall.id
-                    val name = toolCall.function?.name
+                choice.delta?.content?.let { emitTextDelta(text = it, index = choice.index) }
+
+                // KOOG_BUG: reasoningContent 流式推理，koog 的 OpenAIStreamDelta 无此字段
+                choice.delta?.reasoningContent?.let {
+                    emitReasoningDelta(text = it, index = choice.index)
+                }
+
+                choice.delta?.toolCalls?.forEach { toolCall ->
+                    // KOOG_BUG: 将空字符串的 id/name 转换为 null，让 StreamFrameFlowBuilder 正确识别为追加操作
+                    val id = toolCall.id?.takeIf { it.isNotBlank() }
+                    val name = toolCall.function?.name?.takeIf { it.isNotBlank() }
                     val arguments = toolCall.function?.arguments
                     val index = toolCall.index
                     emitToolCallDelta(id, name, arguments, index)

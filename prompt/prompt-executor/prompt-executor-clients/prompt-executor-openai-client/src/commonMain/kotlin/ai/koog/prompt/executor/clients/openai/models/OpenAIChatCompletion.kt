@@ -248,14 +248,14 @@ public class OpenAIChoice(
  */
 @Serializable
 public class OpenAIChatCompletionResponse(
-    public val choices: List<OpenAIChoice>,
-    public override val created: Long,
-    public override val id: String,
-    public override val model: String,
+    public val choices: List<OpenAIChoice> = emptyList(),
+    public override val created: Long? = null,
+    public override val id: String? = null,
+    public override val model: String? = null,
     public val serviceTier: String? = null,
     public val systemFingerprint: String? = null,
     @SerialName("object")
-    public val objectType: String,
+    public val objectType: String? = null,
     public val usage: OpenAIUsage? = null,
 ) : OpenAIBaseLLMResponse
 
@@ -293,14 +293,14 @@ public class OpenAIChatCompletionResponse(
  */
 @Serializable
 public class OpenAIChatCompletionStreamResponse(
-    public val choices: List<OpenAIStreamChoice>,
-    public override val created: Long,
-    public override val id: String,
-    public override val model: String,
+    public val choices: List<OpenAIStreamChoice> = emptyList(),
+    public override val created: Long? = null,
+    public override val id: String? = null,
+    public override val model: String? = null,
     public val serviceTier: String? = null,
     public val systemFingerprint: String? = null,
     @SerialName("object")
-    public val objectType: String,
+    public val objectType: String? = null,
     public val usage: OpenAIUsage? = null,
 ) : OpenAIBaseLLMStreamResponse
 

@@ -157,9 +157,9 @@ public open class MistralAILLMClient @JvmOverloads constructor(
     override fun processProviderChatResponse(response: MistralAIChatCompletionResponse): List<Message.Assistant> {
         require(response.choices.isNotEmpty()) { "Empty choices in response" }
         val usageInfo = OpenAIUsage(
-            promptTokens = response.usage.promptTokens,
-            completionTokens = response.usage.completionTokens,
-            totalTokens = response.usage.totalTokens,
+            promptTokens = response.usage?.promptTokens,
+            completionTokens = response.usage?.completionTokens,
+            totalTokens = response.usage?.totalTokens,
         )
         return response.choices.map {
             it.message.toMessageResponse(
@@ -183,9 +183,9 @@ public open class MistralAILLMClient @JvmOverloads constructor(
 
         response.collect { chunk ->
             chunk.choices.firstOrNull()?.let { choice ->
-                choice.delta.content?.let { emitTextDelta(it) }
+                choice.delta?.content?.let { emitTextDelta(it) }
 
-                choice.delta.toolCalls?.forEach { toolCall ->
+                choice.delta?.toolCalls?.forEach { toolCall ->
                     val id = toolCall.id
                     val name = toolCall.function?.name
                     val arguments = toolCall.function?.arguments
