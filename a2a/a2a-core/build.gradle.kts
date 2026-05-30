@@ -7,11 +7,15 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
+val isJsEnabled = (findProperty("koog.target.js") as? String)?.toBoolean() ?: true
+
 kotlin {
     jvm()
 
-    js(IR) {
-        browser()
+    if (isJsEnabled) {
+        js(IR) {
+            browser()
+        }
     }
 
     sourceSets {
@@ -36,9 +40,11 @@ kotlin {
             }
         }
 
-        jsTest {
-            dependencies {
-                implementation(kotlin("test-js"))
+        if (isJsEnabled) {
+            jsTest {
+                dependencies {
+                    implementation(kotlin("test-js"))
+                }
             }
         }
     }
