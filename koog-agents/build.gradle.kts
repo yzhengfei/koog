@@ -181,21 +181,31 @@ kotlin {
             api(libs.ktor.client.apache5)
         }
 
-        androidMain.dependencies {
-            api(libs.ktor.client.okhttp)
-        }
+        val isAndroidEnabled = (findProperty("koog.target.android") as? String)?.toBoolean() ?: true
+        val isJsEnabled = (findProperty("koog.target.js") as? String)?.toBoolean() ?: true
+        val isIosEnabled = (findProperty("koog.target.ios") as? String)?.toBoolean() ?: true
 
-        appleMain {
-            dependsOn(nonWasmJsMain)
-            dependencies {
-                api(libs.ktor.client.darwin)
+        if (isAndroidEnabled) {
+            androidMain.dependencies {
+                api(libs.ktor.client.okhttp)
             }
         }
 
-        jsMain {
-            dependsOn(nonWasmJsMain)
-            dependencies {
-                api(libs.ktor.client.js)
+        if (isIosEnabled) {
+            appleMain {
+                dependsOn(nonWasmJsMain)
+                dependencies {
+                    api(libs.ktor.client.darwin)
+                }
+            }
+        }
+
+        if (isJsEnabled) {
+            jsMain {
+                dependsOn(nonWasmJsMain)
+                dependencies {
+                    api(libs.ktor.client.js)
+                }
             }
         }
 

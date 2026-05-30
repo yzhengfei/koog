@@ -6,6 +6,8 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
+val isJsEnabled = (findProperty("koog.target.js") as? String)?.toBoolean() ?: true
+
 kotlin {
     sourceSets {
 
@@ -31,7 +33,9 @@ kotlin {
             }
         }
 
-        jsMain {}
+        if (isJsEnabled) {
+            jsMain {}
+        }
     }
 
     explicitApi()

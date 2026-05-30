@@ -1,5 +1,4 @@
 import ai.koog.gradle.publish.maven.Publishing.publishToMaven
-import org.gradle.kotlin.dsl.implementation
 import org.gradle.kotlin.dsl.project
 
 

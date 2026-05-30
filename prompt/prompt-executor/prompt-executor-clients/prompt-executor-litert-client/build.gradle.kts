@@ -10,21 +10,25 @@ plugins {
 group = rootProject.group
 version = rootProject.version
 
+val isAndroidEnabled = (findProperty("koog.target.android") as? String)?.toBoolean() ?: true
+
 kotlin {
     sourceSets {
-        androidMain {
-            dependencies {
-                api(project(":prompt:prompt-executor:prompt-executor-clients"))
-                api(project(":prompt:prompt-llm"))
-                implementation(libs.android.litertlm)
-                implementation(libs.mcp.client)
-                implementation(libs.kotlinx.serialization.json)
+        if (isAndroidEnabled) {
+            androidMain {
+                dependencies {
+                    api(project(":prompt:prompt-executor:prompt-executor-clients"))
+                    api(project(":prompt:prompt-llm"))
+                    implementation(libs.android.litertlm)
+                    implementation(libs.mcp.client)
+                    implementation(libs.kotlinx.serialization.json)
+                }
             }
-        }
 
-        androidUnitTest {
-            dependencies {
-                implementation(project(":test-utils"))
+            androidUnitTest {
+                dependencies {
+                    implementation(project(":test-utils"))
+                }
             }
         }
     }
