@@ -88,13 +88,13 @@ internal class MistralAIChatCompletionRequest(
  */
 @Serializable
 public class MistralAIChatCompletionResponse(
-    override val id: String,
+    override val id: String? = null,
     @SerialName("object")
-    public val objectType: String,
-    override val model: String,
-    public val usage: MistralAIUsage,
-    override val created: Long,
-    public val choices: List<OpenAIChoice>
+    public val objectType: String? = null,
+    override val model: String? = null,
+    public val usage: MistralAIUsage? = null,
+    override val created: Long? = null,
+    public val choices: List<OpenAIChoice> = emptyList(),
 ) : OpenAIBaseLLMResponse
 
 /**
@@ -120,13 +120,13 @@ public class MistralAIUsage(
  */
 @Serializable
 public class MistralAIChatCompletionStreamResponse(
-    public val choices: List<OpenAIStreamChoice>,
-    override val created: Long,
-    override val id: String,
-    override val model: String,
+    public val choices: List<OpenAIStreamChoice> = emptyList(),
+    override val created: Long? = null,
+    override val id: String? = null,
+    override val model: String? = null,
     public val systemFingerprint: String? = null,
     @SerialName("object")
-    public val objectType: String,
+    public val objectType: String? = null,
     public val usage: MistralAIUsage? = null,
 ) : OpenAIBaseLLMStreamResponse
 

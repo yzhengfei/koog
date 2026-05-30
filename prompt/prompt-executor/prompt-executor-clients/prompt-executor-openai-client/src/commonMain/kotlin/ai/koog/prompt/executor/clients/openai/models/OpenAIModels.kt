@@ -5,17 +5,17 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 internal data class OpenAIModelsResponse(
-    val data: List<OpenAIModel>,
+    val data: List<OpenAIModel> = emptyList(),
     @SerialName("object")
-    val objectType: String
+    val objectType: String? = null,
 )
 
 @Serializable
 internal data class OpenAIModel(
     val id: String,
     @SerialName("object")
-    val objectType: String,
-    val created: Long,
+    val objectType: String? = null,
+    val created: Long? = null,
     @SerialName("owned_by")
-    val ownedBy: String
+    val ownedBy: String? = null,
 )

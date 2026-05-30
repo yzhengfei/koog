@@ -62,7 +62,7 @@ public class OpenRouterClientSettings(
  *   that accepts an API key and a [KoogHttpClient.Factory] to create a client with standard defaults.
  * @param clock Clock instance used for tracking response metadata timestamps.
  */
-public class OpenRouterLLMClient @JvmOverloads constructor(
+public open class OpenRouterLLMClient @JvmOverloads constructor(
     private val settings: OpenRouterClientSettings = OpenRouterClientSettings(),
     httpClient: KoogHttpClient,
     clock: KoogClock = KoogClock.System,
@@ -189,11 +189,11 @@ public class OpenRouterLLMClient @JvmOverloads constructor(
                 choice.delta.content?.let { emitTextDelta(it) }
                 choice.delta.reasoning?.let { emitReasoningDelta(text = it) }
 
-                choice.delta.toolCalls?.forEach { streamToolCall ->
-                    val index = streamToolCall.index
-                    val id = streamToolCall.id
-                    val name = streamToolCall.function?.name
-                    val arguments = streamToolCall.function?.arguments
+                choice.delta.toolCalls?.forEachIndexed { index, openAIToolCall ->
+                    // KOOG_BUG: 将空字符串的 id/name 转换为 null，让 StreamFrameFlowBuilder 正确识别为追加操作
+                    val id = openAIToolCall.id?.takeIf { it.isNotBlank() }
+                    val name = openAIToolCall.function?.name?.takeIf { it.isNotBlank() }
+                    val arguments = openAIToolCall.function?.arguments
                     emitToolCallDelta(id, name, arguments, index)
                 }
 

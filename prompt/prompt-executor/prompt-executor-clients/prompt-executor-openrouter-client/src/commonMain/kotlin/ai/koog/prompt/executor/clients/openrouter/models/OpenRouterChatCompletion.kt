@@ -14,6 +14,7 @@ import ai.koog.prompt.executor.clients.serialization.AdditionalPropertiesFlatten
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNames
 
 /**
  * OpenRouter Chat Completions API Request
@@ -135,6 +136,8 @@ public class OpenRouterStreamDelta(
     public val content: String? = null,
     public val role: String? = null,
     public val toolCalls: List<OpenAIStreamToolCall>? = null,
+    @JsonNames("reasoning_content")
+    @SerialName("reasoning")
     public val reasoning: String? = null,
     @SerialName("reasoning_details")
     public val reasoningDetails: List<JsonElement>? = null
@@ -161,9 +164,9 @@ public class ErrorResponse(
 @Serializable
 public class OpenRouterChatCompletionResponse(
     public val choices: List<OpenRouterChoice> = emptyList(),
-    override val created: Long = 0L,
-    override val id: String = "",
-    override val model: String = "",
+    override val created: Long? = null,
+    override val id: String? = null,
+    override val model: String? = null,
     public val systemFingerprint: String? = null,
     @SerialName("object")
     public val objectType: String = "chat.completion",
@@ -177,10 +180,10 @@ public class OpenRouterChatCompletionResponse(
  */
 @Serializable
 public class OpenRouterChatCompletionStreamResponse(
-    public val choices: List<OpenRouterStreamChoice>,
-    override val created: Long,
-    override val id: String,
-    override val model: String,
+    public val choices: List<OpenRouterStreamChoice> = emptyList(),
+    override val created: Long? = null,
+    override val id: String? = null,
+    override val model: String? = null,
     public val systemFingerprint: String? = null,
     @SerialName("object")
     public val objectType: String = "chat.completion.chunk",

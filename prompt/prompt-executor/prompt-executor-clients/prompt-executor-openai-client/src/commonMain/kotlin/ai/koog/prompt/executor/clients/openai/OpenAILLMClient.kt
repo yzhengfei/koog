@@ -291,14 +291,23 @@ public open class OpenAILLMClient @JvmOverloads constructor(
 
         response.collect { chunk ->
             chunk.choices.firstOrNull()?.let { choice ->
-                choice.delta.content?.let { emitTextDelta(it, choice.index) }
+                // KOOG_BUG: FIM 代码补全用 text 字段，koog 的 OpenAIStreamChoice 无此字段
+                choice.text?.let { emitTextDelta(text = it, index = choice.index) }
 
-                choice.delta.toolCalls?.forEach { openAIToolCall ->
-                    val index = openAIToolCall.index
-                    val id = openAIToolCall.id
-                    val functionName = openAIToolCall.function?.name
-                    val functionArgs = openAIToolCall.function?.arguments
-                    emitToolCallDelta(id, functionName, functionArgs, index)
+                choice.delta?.content?.let { emitTextDelta(text = it, index = choice.index) }
+
+                // KOOG_BUG: reasoningContent 流式推理，koog 的 OpenAIStreamDelta 无此字段
+                choice.delta?.reasoningContent?.let {
+                    emitReasoningDelta(text = it, index = choice.index)
+                }
+
+                choice.delta?.toolCalls?.forEach { toolCall ->
+                    // KOOG_BUG: 将空字符串的 id/name 转换为 null，让 StreamFrameFlowBuilder 正确识别为追加操作
+                    val id = toolCall.id?.takeIf { it.isNotBlank() }
+                    val name = toolCall.function?.name?.takeIf { it.isNotBlank() }
+                    val arguments = toolCall.function?.arguments
+                    val index = toolCall.index
+                    emitToolCallDelta(id, name, arguments, index)
                 }
 
                 choice.finishReason?.let { finishReason = it }

@@ -14,6 +14,7 @@ import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonClassDiscriminator
 import kotlinx.serialization.json.JsonDecoder
+import kotlinx.serialization.json.JsonNames
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
@@ -46,13 +47,13 @@ public interface OpenAIBaseLLMRequest {
  */
 public interface OpenAIBaseLLMResponse {
     /** The response id. */
-    public val id: String
+    public val id: String?
 
     /** The response model. */
-    public val model: String
+    public val model: String?
 
     /** The Unix timestamp (in seconds) of when the chat completion was created. */
-    public val created: Long
+    public val created: Long?
 }
 
 /**
@@ -938,10 +939,11 @@ public class PromptTokensDetails(
  */
 @Serializable
 public class OpenAIStreamChoice(
-    public val delta: OpenAIStreamDelta,
+    public val delta: OpenAIStreamDelta? = null,
     public val finishReason: String? = null,
-    public val index: Int,
+    public val index: Int? = null,
     public val logprobs: OpenAIChoiceLogProbs? = null,
+    public val text: String? = null,
 )
 
 /**
@@ -957,7 +959,10 @@ public class OpenAIStreamDelta(
     public val content: String? = null,
     public val refusal: String? = null,
     public val role: String? = null,
-    public val toolCalls: List<OpenAIStreamToolCall>? = null
+    public val toolCalls: List<OpenAIStreamToolCall>? = null,
+    @JsonNames("reasoning")
+    @SerialName("reasoning_content")
+    public val reasoningContent: String? = null,
 )
 
 internal object ContentSerializer : KSerializer<Content> {
