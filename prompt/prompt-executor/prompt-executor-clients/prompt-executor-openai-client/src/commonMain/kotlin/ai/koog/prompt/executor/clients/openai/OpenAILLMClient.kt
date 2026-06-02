@@ -835,7 +835,8 @@ public open class OpenAILLMClient @JvmOverloads constructor(
                                             Item.FunctionToolCall(
                                                 callId = part.id ?: Uuid.random().toString(),
                                                 name = part.tool,
-                                                arguments = Json.encodeToString(part.args)
+                                                //KOOG_BUG: 这里会将工具参数二次toJsonString
+                                                arguments = part.args
                                             )
                                         )
                                     } else {

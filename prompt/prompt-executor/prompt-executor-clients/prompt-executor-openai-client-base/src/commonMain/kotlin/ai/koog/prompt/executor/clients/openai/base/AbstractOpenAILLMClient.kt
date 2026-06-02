@@ -319,7 +319,8 @@ public abstract class AbstractOpenAILLMClient<TResponse : OpenAIBaseLLMResponse,
                                     ?.map {
                                         OpenAIToolCall(
                                             it.id ?: Uuid.random().toString(),
-                                            function = OpenAIFunction(it.tool, Json.encodeToString(it.args))
+                                            //KOOG_BUG: 这里会将工具参数二次toJsonString
+                                            function = OpenAIFunction(it.tool, it.args)
                                         )
                                     }
                             )
