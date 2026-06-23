@@ -142,6 +142,9 @@ public class StreamFrameFlowBuilder(
      * Emits a [StreamFrame.TextDelta] with the given [text].
      */
     public suspend fun emitTextDelta(text: String, index: Int? = null) {
+        // KOOG_BUG: 某些供应商（如 GLM）在工具调用 chunk 中携带空 content，
+        // 触发 tryEmitPendingToolCall 导致工具调用被错误拆分为多段
+        if (text.isEmpty()) return
         tryEmitPendingToolCall()
         tryEmitPendingReasoning()
         val previous: PendingText? = pendingTextRef.load()
@@ -157,6 +160,9 @@ public class StreamFrameFlowBuilder(
      * Emits a [StreamFrame.ReasoningDelta] with the given [text].
      */
     public suspend fun emitReasoningDelta(id: String? = null, text: String? = null, summary: String? = null, index: Int? = null) {
+        // KOOG_BUG: 某些供应商在工具调用 chunk 中携带空 reasoning_content，
+        // 触发 tryEmitPendingToolCall 导致工具调用被错误拆分为多段
+        if (text.isNullOrEmpty() && summary.isNullOrEmpty()) return
         tryEmitPendingToolCall()
         tryEmitPendingText()
         val previous: PendingReasoning? = pendingReasoningRef.load()
